@@ -28,9 +28,9 @@ exports.createVendor = async (req, res) => {
     } = req.body;
 
     // ✅ 必填欄位檢查（這是你原本缺的）
-    if (!name || !contactPerson || !phone || !taxId) {
+    if (!name || !contactPerson || !taxId) {
       return res.status(400).json({
-        error: '請確認公司名稱、負責人、電話、統編皆已填寫',
+        error: '請確認公司名稱、負責人、統編皆已填寫',
       });
     }
 

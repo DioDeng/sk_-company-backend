@@ -34,12 +34,13 @@ exports.getMonthlySalary = async (req, res) => {
     const end = start.endOf('month');
 
     const logs = await WorkLog.find({
+      active: true,
       employee: employeeId,
       date: { $gte: start.toDate(), $lte: end.toDate() },
     });
 
     const totalHours = logs.reduce((sum, log) => sum + (log.hours || 0), 0);
-    const totalSalary = totalHours * employee.hourlyRate;
+    const totalSalary = Math.round(totalHours * employee.hourlyRate * 100) / 100;
 
     res.json({
       employeeId,
@@ -69,6 +70,8 @@ exports.getMonthlyPayroll = async (req, res) => {
     const end = start.endOf('month');
 
     const logs = await WorkLog.find({
+      active: true,
+      deletedAt: null,
       date: { $gte: start.toDate(), $lte: end.toDate() },
     }).populate({
       path: 'employee',
@@ -96,7 +99,7 @@ exports.getMonthlyPayroll = async (req, res) => {
       };
 
       current.totalHours += log.hours || 0;
-      current.totalSalary = current.totalHours * current.hourlyRate;
+      current.totalSalary = Math.round(current.totalHours * current.hourlyRate * 100) / 100;
 
       payrollMap.set(empId, current);
     });
@@ -134,6 +137,8 @@ exports.generateMonthlyPayrollRecords = async (req, res) => {
     const end = start.endOf('month');
 
     const logs = await WorkLog.find({
+      active: true,
+      deletedAt: null,
       date: { $gte: start.toDate(), $lte: end.toDate() },
     }).populate({
       path: 'employee',
@@ -161,7 +166,7 @@ exports.generateMonthlyPayrollRecords = async (req, res) => {
       };
 
       current.totalHours += log.hours || 0;
-      current.totalSalary = current.totalHours * current.hourlyRate;
+      current.totalSalary = Math.round(current.totalHours * current.hourlyRate * 100) / 100;
 
       payrollMap.set(empId, current);
     });

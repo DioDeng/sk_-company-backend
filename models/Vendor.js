@@ -13,8 +13,14 @@ const VendorSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
-      unique: true,
+      set: v => v === '' ? undefined : v,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          return /^09\d{8}$/.test(v);
+        },
+        message: '請輸入正確的手機號碼格式 (例如 0912345678)'
+      }
     },
     taxId: {
       type: String,

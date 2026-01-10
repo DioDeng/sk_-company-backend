@@ -49,6 +49,15 @@ exports.createWorkLog = async (req, res) => {
       endTime,
     } = req.body;
 
+    const monthKey = dayjs(date).format('YYYY-MM');
+
+    const existsPayroll = await PayrollRecord.findOne({ month: monthKey });
+    if (existsPayroll) {
+      return res.status(400).json({
+        error: '該月份已產生薪資，不可再修改工時',
+      });
+    }
+
     // ✅ 必填欄位檢查
     if (!employee || !caseId || !date || !startTime || !endTime) {
       return res.status(400).json({
@@ -91,7 +100,26 @@ exports.createWorkLog = async (req, res) => {
     }
 
     // ✅ 計算工時（小數）
-    const hours = end.diff(start, 'minute') / 60;
+    // 計算總工時（分鐘）
+    const totalMinutes = end.diff(start, 'minute');
+
+    // 午休區間
+    const breakStart = dayjs('12:00', 'HH:mm');
+    const breakEnd = dayjs('13:00', 'HH:mm');
+
+    // 計算與午休的重疊分鐘數
+    const overlapStart = dayjs.max(start, breakStart);
+    const overlapEnd = dayjs.min(end, breakEnd);
+
+    let breakMinutes = 0;
+    if (overlapStart.isBefore(overlapEnd)) {
+      breakMinutes = overlapEnd.diff(overlapStart, 'minute');
+    }
+
+    // 實際工時（扣除午休）
+    const workingMinutes = totalMinutes - breakMinutes;
+    const hours = workingMinutes / 60;
+
 
     const log = await WorkLog.create({
       employee,
@@ -112,6 +140,24 @@ exports.deleteWorkLog = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. 先找出該筆工時
+    const log = await WorkLog.findById(id);
+    if (!log) {
+      return res.status(404).json({ error: '找不到工時紀錄' });
+    }
+
+    // 2. 用 log.date 取得月份
+    const monthKey = dayjs(log.date).format('YYYY-MM');
+
+    // 3. 檢查是否已發薪
+    const existsPayroll = await PayrollRecord.findOne({ month: monthKey });
+    if (existsPayroll) {
+      return res.status(400).json({
+        error: '該月份已產生薪資，不可再修改工時',
+      });
+    }
+
+    // 4. 通過檢查才允許刪除（soft delete）
     await WorkLog.findByIdAndUpdate(id, {
       active: false,
       deletedAt: new Date(),

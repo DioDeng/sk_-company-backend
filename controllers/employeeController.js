@@ -21,7 +21,14 @@ exports.createEmployee = async (req, res) => {
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = await Employee.findByIdAndUpdate(id, req.body, { new: true });
+    const employee = await Employee.findByIdAndUpdate(
+      id,
+      req.body,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
     res.json({ message: 'Employee Updated', employee });
   } catch (err) {
     res.status(400).json({ error: err.message });

@@ -8,8 +8,15 @@ const EmployeeSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, '請輸入聯絡電話']
-    },
+      set: v => v === '' ? undefined : v,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          return /^09\d{8}$/.test(v);
+        },
+        message: '請輸入正確的手機號碼格式 (例如 0912345678)'
+      }
+    },      
     role: {
       type: String,
       enum: ['worker', 'leader', 'staff'],
@@ -17,8 +24,14 @@ const EmployeeSchema = new mongoose.Schema(
     },
     hourlyRate: {
       type: Number,
-      required: [true, '請輸入時薪']
-    },
+      required: [true, '請輸入時薪'],
+      validate: {
+        validator: function (v) {
+          return /^\d+(\.\d{1,2})?$/.test(v.toString());
+        },
+        message: '時薪最多只能到小數點後兩位'
+      }
+    },       
     active: {
       type: Boolean,
       default: true
